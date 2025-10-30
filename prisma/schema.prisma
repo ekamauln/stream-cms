@@ -10,7 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -24,6 +24,7 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  Comment       Comment[]
 
   @@unique([email])
   @@map("user")
@@ -72,4 +73,60 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  movies      Movie[]  @relation("MovieCategories")
+
+  @@index([name])
+}
+
+model Movie {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  synopsis    String?
+  releaseYear Int?
+  duration    Int? // minutes
+  language    String?
+  posterUrl   String?
+  videoUrl    String
+  isPublished Boolean  @default(false) // published -> visible on public site
+  featured    Boolean  @default(false)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // relations
+  categories Category[] @relation("MovieCategories")
+  comments   Comment[]
+
+  @@index([title])
+  @@index([isPublished])
+  @@index([featured])
+  @@index([createdAt])
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  movie       Movie    @relation(fields: [movieId], references: [id])
+  movieId     Int
+  user        User?    @relation(fields: [userId], references: [id])
+  userId      String? // nullable => public comment allowed, changed to String to match User.id
+  authorName  String? // for public comments when userId is null
+  authorEmail String? // optional, for moderation
+  text        String
+  ipAddress   String? // optional for moderation
+  isApproved  Boolean  @default(false) // moderation workflow
+  createdAt   DateTime @default(now())
+
+  @@index([movieId])
+  @@index([userId])
+  @@index([createdAt])
 }
