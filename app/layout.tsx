@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Header } from "@/components/custom-ui/header";
+import { Footer } from "@/components/custom-ui/footer";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/custom-ui/theme-provider";
 import "./globals.css";
@@ -28,14 +30,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <div className="min-h-screen bg-background">
+          <Header />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+          <Footer />
+        </div>
       </body>
     </html>
   );

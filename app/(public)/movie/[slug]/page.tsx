@@ -96,7 +96,7 @@ export default async function MoviePage({ params }: MoviePageProps) {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto px-4 py-8">
       {/* Track view count */}
       {/* Option 1: Session-based (default) - only counts once per session */}
       {/* <ViewTracker movieSlug={slug} sessionBased={true} /> */}
@@ -104,106 +104,70 @@ export default async function MoviePage({ params }: MoviePageProps) {
       {/* Option 2: Count every visit - no session limitation */}
       <ViewTracker movieSlug={slug} sessionBased={false} />
 
-      <div className="max-w-4xl mx-auto">
-        {/* Movie Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{movie.title}</h1>
-          <div className="flex items-center gap-4 text-muted-foreground mb-4">
-            {movie.releaseYear && <span>{movie.releaseYear}</span>}
-            {movie.duration && <span>{movie.duration} min</span>}
-            {movie.language && <span>{movie.language}</span>}
-            <LiveViewCount movieSlug={slug} initialCount={movie.viewCount} />
-          </div>
-          {movie.categories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {movie.categories.map((category) => (
-                <span
-                  key={category.id}
-                  className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm"
-                >
-                  {category.name}
-                </span>
-              ))}
-            </div>
-          )}
+      {/* Movie Header */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">{movie.title}</h1>
+        <div className="flex items-center gap-4 text-muted-foreground mb-4">
+          {movie.releaseYear && <span>{movie.releaseYear}</span>}
+          {movie.duration && <span>{movie.duration} min</span>}
+          {movie.language && <span>{movie.language}</span>}
+          <LiveViewCount movieSlug={slug} initialCount={movie.viewCount} />
         </div>
-
-        {/* Video Player */}
-        {movie.videoUrl && (
-          <div className="mb-8">
-            <div className="w-full max-w-4xl mx-auto rounded-lg shadow-lg overflow-hidden bg-black">
-              {/* Check if it's an embed URL (YouTube, Vimeo, etc.) */}
-              {movie.videoUrl.includes("embed") ||
-              movie.videoUrl.includes("youtube.com") ||
-              movie.videoUrl.includes("vimeo.com") ||
-              movie.videoUrl.includes("wistia.com") ||
-              movie.videoUrl.includes("short.icu") ? (
-                <iframe
-                  src={movie.videoUrl}
-                  className="w-full aspect-video"
-                  allowFullScreen
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  title={movie.title}
-                />
-              ) : (
-                /* Direct video file */
-                <video
-                  controls
-                  className="w-full aspect-video"
-                  poster={movie.posterUrl || undefined}
-                  preload="metadata"
-                >
-                  <source src={movie.videoUrl} type="video/mp4" />
-                  <source src={movie.videoUrl} type="video/webm" />
-                  <source src={movie.videoUrl} type="video/ogg" />
-                  Your browser does not support the video tag.
-                </video>
-              )}
-            </div>
+        {movie.categories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {movie.categories.map((category) => (
+              <span
+                key={category.id}
+                className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm"
+              >
+                {category.name}
+              </span>
+            ))}
           </div>
         )}
+      </div>
 
-        {/* Description */}
+      {/* Video Player */}
+      {movie.videoUrl && (
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Description</h2>
-          <p className="text-lg leading-relaxed whitespace-pre-wrap">
-            {getDisplayDescription(movie.metaDescription, movie.synopsis)}
-          </p>
-        </div>
-
-        {/* SEO Info (visible in development) */}
-        <div className="mt-12 p-6 bg-muted rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">SEO Meta Tags Preview</h3>
-          <div className="space-y-3 text-sm">
-            <div>
-              <strong>Meta Title:</strong>
-              <span className="ml-2 text-muted-foreground">
-                {movie.metaTitle || movie.title}
-              </span>
-            </div>
-            <div>
-              <strong>Meta Description:</strong>
-              <p className="ml-2 text-muted-foreground mt-1 p-2 bg-background rounded border">
-                {movie.metaDescription || (
-                  <span>
-                    <em className="text-orange-600">
-                      Using synopsis as fallback:
-                    </em>
-                    <br />
-                    {movie.synopsis || "No description available"}
-                  </span>
-                )}
-              </p>
-            </div>
-            <div>
-              <strong>Meta Keywords:</strong>
-              <span className="ml-2 text-muted-foreground">
-                {movie.metaKeywords ||
-                  movie.categories.map((cat) => cat.name).join(", ")}
-              </span>
-            </div>
+          <div className="w-full rounded-lg shadow-lg overflow-hidden bg-black">
+            {/* Check if it's an embed URL (YouTube, Vimeo, etc.) */}
+            {movie.videoUrl.includes("embed") ||
+            movie.videoUrl.includes("youtube.com") ||
+            movie.videoUrl.includes("vimeo.com") ||
+            movie.videoUrl.includes("wistia.com") ||
+            movie.videoUrl.includes("short.icu") ? (
+              <iframe
+                src={movie.videoUrl}
+                className="w-full aspect-video"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                title={movie.title}
+              />
+            ) : (
+              /* Direct video file */
+              <video
+                controls
+                className="w-full aspect-video"
+                poster={movie.posterUrl || undefined}
+                preload="metadata"
+              >
+                <source src={movie.videoUrl} type="video/mp4" />
+                <source src={movie.videoUrl} type="video/webm" />
+                <source src={movie.videoUrl} type="video/ogg" />
+                Your browser does not support the video tag.
+              </video>
+            )}
           </div>
         </div>
+      )}
+
+      {/* Description */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Description</h2>
+        <p className="text-lg leading-relaxed whitespace-pre-wrap">
+          {getDisplayDescription(movie.metaDescription, movie.synopsis)}
+        </p>
       </div>
     </div>
   );
