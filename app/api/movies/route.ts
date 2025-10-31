@@ -8,6 +8,8 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category");
     const published = searchParams.get("published");
     const featured = searchParams.get("featured");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
 
     interface WhereConditions {
       OR?: Array<{
@@ -49,6 +51,16 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const totalCount = await db.movie.count({
+      where: whereConditions,
+    });
+
+    const totalPages = Math.ceil(totalCount / limit);
+
     const movies = await db.movie.findMany({
       where: whereConditions,
       include: {
@@ -57,9 +69,21 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: limit,
     });
 
-    return NextResponse.json(movies);
+    return NextResponse.json({
+      movies,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+        limit,
+      },
+    });
   } catch (error) {
     console.error("Error fetching movies:", error);
     return NextResponse.json(
