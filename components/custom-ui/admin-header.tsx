@@ -99,54 +99,56 @@ export function AdminHeader({
   };
 
   return (
-    <header className="flex h-16 items-center gap-2 justify-between">
-      <div className="flex items-center gap-2 px-4">
-        <Link href="/admin/dashboard">
-          <House className="h-4 w-4" />
-        </Link>
-        <Separator
-          orientation="vertical"
-          className="mr-2 data-[orientation=vertical]:h-4"
-        />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
-            {(breadcrumbs || dynamicBreadcrumbs).length > 0 && (
-              <BreadcrumbSeparator />
-            )}
-            {(breadcrumbs || dynamicBreadcrumbs).map((breadcrumb, index) => (
-              <div key={index} className="flex items-center">
-                {breadcrumb.href ? (
-                  <BreadcrumbLink
-                    href={breadcrumb.href}
-                    className="hidden md:block"
-                  >
-                    {breadcrumb.label}
-                  </BreadcrumbLink>
-                ) : (
-                  <BreadcrumbPage className="hidden md:block">
-                    {breadcrumb.label}
-                  </BreadcrumbPage>
-                )}
-                {index < (breadcrumbs || dynamicBreadcrumbs).length - 1 && (
-                  <BreadcrumbSeparator />
-                )}
-              </div>
-            ))}
-            {/* Fallback to title if no breadcrumbs */}
-            {!breadcrumbs && dynamicBreadcrumbs.length === 0 && title && (
-              <BreadcrumbPage className="hidden md:block">
-                {title}
-              </BreadcrumbPage>
-            )}
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-      <div className="px-4">
-        <Button variant="outline" size="sm" onClick={handleSignOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
+    <header className="bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <Link href="/admin/dashboard">
+            <House className="h-4 w-4" />
+          </Link>
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
+              {(breadcrumbs || dynamicBreadcrumbs).length > 0 && (
+                <BreadcrumbSeparator />
+              )}
+              {(breadcrumbs || dynamicBreadcrumbs).map((breadcrumb, index) => (
+                <div key={index} className="flex items-center">
+                  {breadcrumb.href ? (
+                    <BreadcrumbLink
+                      href={breadcrumb.href}
+                      className="hidden md:block"
+                    >
+                      {breadcrumb.label}
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage className="hidden md:block">
+                      {breadcrumb.label}
+                    </BreadcrumbPage>
+                  )}
+                  {index < (breadcrumbs || dynamicBreadcrumbs).length - 1 && (
+                    <BreadcrumbSeparator />
+                  )}
+                </div>
+              ))}
+              {/* Fallback to title if no breadcrumbs */}
+              {!breadcrumbs && dynamicBreadcrumbs.length === 0 && title && (
+                <BreadcrumbPage className="hidden md:block">
+                  {title}
+                </BreadcrumbPage>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div>
+          <Button variant="outline" size="sm" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </div>
     </header>
   );

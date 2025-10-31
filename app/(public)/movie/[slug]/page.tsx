@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
-import { ViewTracker } from "@/components/view-tracker";
-import { LiveViewCount } from "@/components/live-view-count";
+import { ViewTracker } from "@/components/custom-ui/view-tracker";
+import { LiveViewCount } from "@/components/custom-ui/live-view-count";
 
 interface MoviePageProps {
   params: Promise<{

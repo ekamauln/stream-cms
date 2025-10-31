@@ -181,23 +181,24 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Categories</h1>
-          <p className="text-muted-foreground">
-            Manage movie categories and organize your content
-          </p>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Categories</h1>
+            <p className="text-muted-foreground">
+              Manage movie categories and organize your content
+            </p>
+          </div>
+          <Button onClick={handleCreateNew} className="md:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            New Category
+          </Button>
         </div>
-        <Button onClick={handleCreateNew} className="md:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          New Category
-        </Button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -426,6 +427,7 @@ export default function CategoriesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }

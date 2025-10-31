@@ -44,17 +44,18 @@ export default function Page() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <p className="mt-2 text-lg">
-          Welcome back,{" "}
-          <span className="font-semibold text-primary underline decoration-orange-400 decoration-2 underline-offset-4">
-            {user?.name || user?.email}
-          </span>
-        </p>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <p className="mt-2 text-lg">
+            Welcome back,{" "}
+            <span className="font-semibold text-primary underline decoration-orange-400 decoration-2 underline-offset-4">
+              {user?.name || user?.email}
+            </span>
+          </p>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>User Information</CardTitle>
@@ -161,6 +162,7 @@ export default function Page() {
         </Card>
 
         <div className="bg-muted/50 min-h-screen flex-1 rounded-xl md:min-h-min" />
+        </div>
       </div>
     </div>
   );
