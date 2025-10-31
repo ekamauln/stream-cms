@@ -39,15 +39,15 @@ export function MovieCard({ movie }: MovieCardProps) {
   };
 
   return (
-    <Link href={`/movies/${movie.slug}`}>
-      <Card className="group overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
-        <div className="relative aspect-2/3 overflow-hidden">
+    <Link href={`/movie/${movie.slug}`}>
+      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl py-0">
+        <div className="relative h-70 w-full overflow-hidden">
           {movie.posterUrl ? (
             <Image
               src={movie.posterUrl}
               alt={movie.title}
               fill
-              className="object-cover transition-transform duration-300 group-hover:scale-110"
+              className="object-cover transition-transform duration-300 group-hover:scale-110 mt-0"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
@@ -78,7 +78,7 @@ export function MovieCard({ movie }: MovieCardProps) {
           </div>
         </div>
 
-        <CardContent className="p-4">
+        <CardContent className="pt-0 pb-4 px-4">
           <h3 className="mb-2 font-semibold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
             {movie.title}
           </h3>

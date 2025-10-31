@@ -9,6 +9,7 @@ import { Footer } from "@/components/custom-ui/footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Film, Sparkles, TrendingUp, Loader2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 // Type definitions for API response
 interface ApiMovie {
@@ -150,53 +151,6 @@ export default function Home() {
       <Header />
 
       <main className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <section className="mb-12 text-center">
-          <div className="mx-auto max-w-3xl">
-            <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-6xl">
-              Discover Amazing <span className="text-primary">Movies</span>
-            </h1>
-            <p className="mb-8 text-xl text-muted-foreground">
-              Explore our curated collection of films across all genres. From
-              blockbuster hits to indie gems.
-            </p>
-
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 mb-8">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {isLoadingMovies ? (
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  ) : (
-                    movies.length
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">Movies</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {isLoadingCategories ? (
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  ) : (
-                    categories.length
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">Categories</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">
-                  {isLoadingMovies ? (
-                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                  ) : (
-                    "∞"
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">Available</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Featured Movies Section */}
         {!isLoadingMovies && featuredMovies.length > 0 && (
           <section className="mb-12">
@@ -224,10 +178,14 @@ export default function Home() {
             </div>
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin mr-2" />
-              <span className="text-muted-foreground">Loading featured movies...</span>
+              <span className="text-muted-foreground">
+                Loading featured movies...
+              </span>
             </div>
           </section>
         )}
+
+        <Separator className="my-6" />
 
         {/* Filters */}
         <section className="mb-8">
@@ -249,7 +207,9 @@ export default function Home() {
             {isLoadingCategories ? (
               <div className="flex items-center justify-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                <span className="text-muted-foreground">Loading categories...</span>
+                <span className="text-muted-foreground">
+                  Loading categories...
+                </span>
               </div>
             ) : (
               <CategoryFilter
