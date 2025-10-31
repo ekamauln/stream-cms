@@ -35,15 +35,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Edit,
+  Trash2,
   FolderOpen,
   Calendar,
-  Hash
+  Hash,
+  Loader2,
 } from "lucide-react";
 import { CategoryForm } from "@/components/forms/category-form";
 
@@ -65,8 +66,11 @@ export default function CategoriesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(
+    null
+  );
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [updateLoading, setUpdateLoading] = useState<{ [key: number]: boolean }>({});
 
   // Debounce search term to avoid too many API calls
   useEffect(() => {
@@ -81,16 +85,16 @@ export default function CategoriesPage() {
     const fetchCategories = async () => {
       setIsLoading(true);
       try {
-        const url = debouncedSearchTerm 
+        const url = debouncedSearchTerm
           ? `/api/categories?search=${encodeURIComponent(debouncedSearchTerm)}`
-          : '/api/categories';
-        
+          : "/api/categories";
+
         const response = await fetch(url);
-        
+
         if (!response.ok) {
-          throw new Error('Failed to fetch categories');
+          throw new Error("Failed to fetch categories");
         }
-        
+
         const data = await response.json();
         setCategories(data);
       } catch (error) {
@@ -124,12 +128,12 @@ export default function CategoriesPage() {
     const refetchCategories = async () => {
       setIsLoading(true);
       try {
-        const url = debouncedSearchTerm 
+        const url = debouncedSearchTerm
           ? `/api/categories?search=${encodeURIComponent(debouncedSearchTerm)}`
-          : '/api/categories';
-        
+          : "/api/categories";
+
         const response = await fetch(url);
-        
+
         if (response.ok) {
           const data = await response.json();
           setCategories(data);
@@ -140,27 +144,31 @@ export default function CategoriesPage() {
         setIsLoading(false);
       }
     };
-    
+
     refetchCategories();
   };
 
   const handleDeleteCategory = async (category: Category) => {
     try {
+      setUpdateLoading(prev => ({ ...prev, [category.id]: true }));
+      
       // Make API call to delete category
-      const response = await fetch(`/api/categories/${category.slug}`, { 
-        method: 'DELETE' 
+      const response = await fetch(`/api/categories/${category.slug}`, {
+        method: "DELETE",
       });
-      
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete category');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to delete category");
       }
-      
-      setCategories(prev => prev.filter(c => c.id !== category.id));
+
+      setCategories((prev) => prev.filter((c) => c.id !== category.id));
       setDeletingCategory(null);
     } catch (error) {
       console.error("Error deleting category:", error);
-      // In production, show error toast
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to delete category'}`);
+    } finally {
+      setUpdateLoading(prev => ({ ...prev, [category.id]: false }));
     }
   };
 
@@ -168,7 +176,7 @@ export default function CategoriesPage() {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
-      day: "numeric"
+      day: "numeric",
     });
   };
 
@@ -192,7 +200,9 @@ export default function CategoriesPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Categories
+            </CardTitle>
             <FolderOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -202,7 +212,7 @@ export default function CategoriesPage() {
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Movies</CardTitle>
@@ -220,12 +230,14 @@ export default function CategoriesPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Empty Categories</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Empty Categories
+            </CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {categories.filter(cat => cat._count.movies === 0).length}
+              {categories.filter((cat) => cat._count.movies === 0).length}
             </div>
             <p className="text-xs text-muted-foreground">
               Categories without movies
@@ -249,11 +261,13 @@ export default function CategoriesPage() {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-muted-foreground">Loading categories...</div>
+              <div className="text-sm text-muted-foreground">
+                Loading categories...
+              </div>
             </div>
           ) : (
             <Table>
@@ -272,7 +286,9 @@ export default function CategoriesPage() {
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
                       <div className="text-sm text-muted-foreground">
-                        {searchTerm ? "No categories found matching your search." : "No categories yet. Create your first category!"}
+                        {searchTerm
+                          ? "No categories found matching your search."
+                          : "No categories yet. Create your first category!"}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -289,12 +305,21 @@ export default function CategoriesPage() {
                       </TableCell>
                       <TableCell className="max-w-[300px] truncate">
                         {category.description || (
-                          <span className="text-muted-foreground italic">No description</span>
+                          <span className="text-muted-foreground italic">
+                            No description
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={category._count.movies === 0 ? "secondary" : "default"}>
-                          {category._count.movies} movie{category._count.movies !== 1 ? 's' : ''}
+                        <Badge
+                          variant={
+                            category._count.movies === 0
+                              ? "secondary"
+                              : "default"
+                          }
+                        >
+                          {category._count.movies} movie
+                          {category._count.movies !== 1 ? "s" : ""}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -303,18 +328,30 @@ export default function CategoriesPage() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              disabled={updateLoading[category.id]}
+                            >
+                              {updateLoading[category.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(category)}>
+                            <DropdownMenuItem
+                              onClick={() => handleEdit(category)}
+                              disabled={updateLoading[category.id]}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => setDeletingCategory(category)}
                               className="text-destructive"
+                              disabled={updateLoading[category.id]}
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
@@ -333,7 +370,7 @@ export default function CategoriesPage() {
 
       {/* Category Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="min-w-3xl max-w-4xl">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? "Edit Category" : "Create New Category"}
@@ -349,26 +386,41 @@ export default function CategoriesPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
+      <AlertDialog
+        open={!!deletingCategory}
+        onOpenChange={() => setDeletingCategory(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{deletingCategory?.name}&rdquo;? 
-              {deletingCategory?._count.movies === 0 
+              Are you sure you want to delete &ldquo;{deletingCategory?.name}
+              &rdquo;?
+              {deletingCategory?._count.movies === 0
                 ? " This action cannot be undone."
-                : ` This category has ${deletingCategory?._count.movies} movie${deletingCategory?._count.movies !== 1 ? 's' : ''}. You cannot delete a category with associated movies.`
-              }
+                : ` This category has ${deletingCategory?._count.movies} movie${
+                    deletingCategory?._count.movies !== 1 ? "s" : ""
+                  }. You cannot delete a category with associated movies.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             {deletingCategory?._count.movies === 0 && (
               <AlertDialogAction
-                onClick={() => deletingCategory && handleDeleteCategory(deletingCategory)}
+                onClick={() =>
+                  deletingCategory && handleDeleteCategory(deletingCategory)
+                }
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deletingCategory ? updateLoading[deletingCategory.id] : false}
               >
-                Delete Category
+                {deletingCategory && updateLoading[deletingCategory.id] ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Category"
+                )}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>

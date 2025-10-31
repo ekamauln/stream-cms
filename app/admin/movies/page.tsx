@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -51,6 +52,7 @@ import {
   Film,
   Loader2,
 } from "lucide-react";
+import { format } from "date-fns/format";
 
 interface Movie {
   id: number;
@@ -87,6 +89,9 @@ export default function MoviesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [deletingMovie, setDeletingMovie] = useState<Movie | null>(null);
+  const [updateLoading, setUpdateLoading] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   // Debounce search query to avoid too many API calls
   useEffect(() => {
@@ -102,20 +107,20 @@ export default function MoviesPage() {
     const fetchMovies = async () => {
       setIsLoading(true);
       try {
-        const url = debouncedSearchQuery 
+        const url = debouncedSearchQuery
           ? `/api/movies?search=${encodeURIComponent(debouncedSearchQuery)}`
-          : '/api/movies';
-        
+          : "/api/movies";
+
         const response = await fetch(url);
-        
+
         if (!response.ok) {
-          throw new Error('Failed to fetch movies');
+          throw new Error("Failed to fetch movies");
         }
-        
+
         const data = await response.json();
         setMovies(data);
       } catch (error) {
-        console.error('Error fetching movies:', error);
+        console.error("Error fetching movies:", error);
         setMovies([]);
       } finally {
         setIsLoading(false);
@@ -159,99 +164,159 @@ export default function MoviesPage() {
 
   const handleDeleteMovie = async (movie: Movie) => {
     try {
+      setUpdateLoading((prev) => ({ ...prev, [movie.id]: true }));
+
       // Make API call to delete movie
-      const response = await fetch(`/api/movies/${movie.slug}`, { 
-        method: 'DELETE' 
+      const response = await fetch(`/api/movies/${movie.slug}`, {
+        method: "DELETE",
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to delete movie');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to delete movie");
       }
-      
-      setMovies(prev => prev.filter(m => m.id !== movie.id));
+
+      setMovies((prev) => prev.filter((m) => m.id !== movie.id));
       setDeletingMovie(null);
     } catch (error) {
       console.error("Error deleting movie:", error);
+      alert(
+        `Error: ${
+          error instanceof Error ? error.message : "Failed to delete movie"
+        }`
+      );
+    } finally {
+      setUpdateLoading((prev) => ({ ...prev, [movie.id]: false }));
     }
   };
 
   const handleTogglePublished = async (movie: Movie) => {
     try {
+      setUpdateLoading((prev) => ({ ...prev, [movie.id]: true }));
+
       // Make API call to update movie
       const response = await fetch(`/api/movies/${movie.slug}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          ...movie,
-          isPublished: !movie.isPublished 
-        })
+        body: JSON.stringify({
+          title: movie.title,
+          synopsis: movie.synopsis,
+          releaseYear: movie.releaseYear,
+          duration: movie.duration,
+          language: movie.language,
+          posterUrl: movie.posterUrl,
+          videoUrl: movie.videoUrl,
+          isPublished: !movie.isPublished,
+          featured: movie.featured,
+          categoryIds: movie.categories.map((cat) => cat.id),
+          metaTitle: movie.metaTitle,
+          metaDescription: movie.metaDescription,
+          metaKeywords: movie.metaKeywords,
+        }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to update movie');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update movie");
       }
-      
-      setMovies(prev => prev.map(m => 
-        m.id === movie.id ? { ...m, isPublished: !m.isPublished } : m
-      ));
+
+      const updatedMovie = await response.json();
+      setMovies((prev) =>
+        prev.map((m) =>
+          m.id === movie.id
+            ? { ...m, isPublished: updatedMovie.isPublished }
+            : m
+        )
+      );
     } catch (error) {
       console.error("Error updating movie:", error);
+      alert(
+        `Error: ${
+          error instanceof Error ? error.message : "Failed to update movie"
+        }`
+      );
+    } finally {
+      setUpdateLoading((prev) => ({ ...prev, [movie.id]: false }));
     }
   };
 
   const handleToggleFeatured = async (movie: Movie) => {
     try {
+      setUpdateLoading((prev) => ({ ...prev, [movie.id]: true }));
+
       // Make API call to update movie
       const response = await fetch(`/api/movies/${movie.slug}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          ...movie,
-          featured: !movie.featured 
-        })
+        body: JSON.stringify({
+          title: movie.title,
+          synopsis: movie.synopsis,
+          releaseYear: movie.releaseYear,
+          duration: movie.duration,
+          language: movie.language,
+          posterUrl: movie.posterUrl,
+          videoUrl: movie.videoUrl,
+          isPublished: movie.isPublished,
+          featured: !movie.featured,
+          categoryIds: movie.categories.map((cat) => cat.id),
+          metaTitle: movie.metaTitle,
+          metaDescription: movie.metaDescription,
+          metaKeywords: movie.metaKeywords,
+        }),
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to update movie');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to update movie");
       }
-      
-      setMovies(prev => prev.map(m => 
-        m.id === movie.id ? { ...m, featured: !m.featured } : m
-      ));
+
+      const updatedMovie = await response.json();
+      setMovies((prev) =>
+        prev.map((m) =>
+          m.id === movie.id ? { ...m, featured: updatedMovie.featured } : m
+        )
+      );
     } catch (error) {
       console.error("Error updating movie:", error);
+      alert(
+        `Error: ${
+          error instanceof Error ? error.message : "Failed to update movie"
+        }`
+      );
+    } finally {
+      setUpdateLoading((prev) => ({ ...prev, [movie.id]: false }));
     }
   };
 
   const handleFormSuccess = () => {
     setIsFormOpen(false);
     setEditingMovie(null);
-    
+
     // Refetch movies list
     const refetchMovies = async () => {
       setIsLoading(true);
       try {
-        const url = debouncedSearchQuery 
+        const url = debouncedSearchQuery
           ? `/api/movies?search=${encodeURIComponent(debouncedSearchQuery)}`
-          : '/api/movies';
-        
+          : "/api/movies";
+
         const response = await fetch(url);
-        
+
         if (response.ok) {
           const data = await response.json();
           setMovies(data);
         }
       } catch (error) {
-        console.error('Error refetching movies:', error);
+        console.error("Error refetching movies:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     refetchMovies();
   };
 
@@ -261,9 +326,12 @@ export default function MoviesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Movies Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Movies Management
+            </h1>
             <p className="text-muted-foreground">
-              Manage your movie collection, create new movies, and update existing ones.
+              Manage your movie collection, create new movies, and update
+              existing ones.
             </p>
           </div>
           <Button onClick={handleCreateMovie} className="w-fit">
@@ -276,34 +344,40 @@ export default function MoviesPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Movies</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Movies
+              </CardTitle>
               <Film className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{movies.length}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Published</CardTitle>
               <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{movies.filter(m => m.isPublished).length}</div>
+              <div className="text-2xl font-bold">
+                {movies.filter((m) => m.isPublished).length}
+              </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Featured</CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{movies.filter(m => m.featured).length}</div>
+              <div className="text-2xl font-bold">
+                {movies.filter((m) => m.featured).length}
+              </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Views</CardTitle>
@@ -311,7 +385,9 @@ export default function MoviesPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {movies.reduce((sum, m) => sum + m.viewCount, 0).toLocaleString()}
+                {movies
+                  .reduce((sum, m) => sum + m.viewCount, 0)
+                  .toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -340,11 +416,14 @@ export default function MoviesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Movie</TableHead>
-                    <TableHead>Categories</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Views</TableHead>
-                    <TableHead>Created</TableHead>
+                    <TableHead className="w-[70px] text-center">
+                      Poster
+                    </TableHead>
+                    <TableHead className="text-center">Movie</TableHead>
+                    <TableHead className="text-center">Categories</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center">Views</TableHead>
+                    <TableHead className="text-center">Created</TableHead>
                     <TableHead className="w-[70px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -354,33 +433,57 @@ export default function MoviesPage() {
                       <TableCell colSpan={6} className="text-center py-8">
                         <div className="flex items-center justify-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-muted-foreground">Loading movies...</span>
+                          <span className="text-muted-foreground">
+                            Loading movies...
+                          </span>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : filteredMovies.length > 0 ? (
                     filteredMovies.map((movie) => (
                       <TableRow key={movie.id}>
+                        <TableCell className="text-center">
+                          {movie.posterUrl ? (
+                            <Image
+                              width="40"
+                              height="60"
+                              src={movie.posterUrl}
+                              alt={movie.title}
+                              className="rounded-md object-cover border border-muted"
+                            />
+                          ) : (
+                            ""
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-medium">{movie.title}</span>
                             <span className="text-sm text-muted-foreground">
-                              {movie.releaseYear} • {movie.duration}min • {movie.language}
+                              {movie.releaseYear} • {movie.duration}min •{" "}
+                              {movie.language}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
+                        <TableCell className="text-center">
+                          <div className="flex flex-wrap gap-1 justify-center items-center">
                             {movie.categories.map((category) => (
-                              <Badge key={category.id} variant="secondary" className="text-xs">
+                              <Badge
+                                key={category.id}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {category.name}
                               </Badge>
                             ))}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-1">
-                            <Badge variant={movie.isPublished ? "default" : "secondary"}>
+                        <TableCell className="text-center">
+                          <div className="flex flex-col gap-1 justify-center items-center">
+                            <Badge
+                              variant={
+                                movie.isPublished ? "default" : "secondary"
+                              }
+                            >
                               {movie.isPublished ? "Published" : "Draft"}
                             </Badge>
                             {movie.featured && (
@@ -390,25 +493,39 @@ export default function MoviesPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">
                           {movie.viewCount.toLocaleString()}
                         </TableCell>
-                        <TableCell>
-                          {new Date(movie.createdAt).toLocaleDateString()}
+                        <TableCell className="text-center">
+                          {format(movie.createdAt, "dd MMMM yyyy")}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="h-4 w-4" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={updateLoading[movie.id]}
+                              >
+                                {updateLoading[movie.id] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <MoreVertical className="h-4 w-4" />
+                                )}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditMovie(movie)}>
+                              <DropdownMenuItem
+                                onClick={() => handleEditMovie(movie)}
+                                disabled={updateLoading[movie.id]}
+                              >
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleTogglePublished(movie)}>
+                              <DropdownMenuItem
+                                onClick={() => handleTogglePublished(movie)}
+                                disabled={updateLoading[movie.id]}
+                              >
                                 {movie.isPublished ? (
                                   <>
                                     <EyeOff className="mr-2 h-4 w-4" />
@@ -421,7 +538,10 @@ export default function MoviesPage() {
                                   </>
                                 )}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleToggleFeatured(movie)}>
+                              <DropdownMenuItem
+                                onClick={() => handleToggleFeatured(movie)}
+                                disabled={updateLoading[movie.id]}
+                              >
                                 {movie.featured ? (
                                   <>
                                     <StarOff className="mr-2 h-4 w-4" />
@@ -434,9 +554,10 @@ export default function MoviesPage() {
                                   </>
                                 )}
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => setDeletingMovie(movie)}
                                 className="text-destructive"
+                                disabled={updateLoading[movie.id]}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
@@ -452,10 +573,15 @@ export default function MoviesPage() {
                         <div className="flex flex-col items-center gap-2">
                           <Film className="h-8 w-8 text-muted-foreground" />
                           <p className="text-muted-foreground">
-                            {searchQuery ? "No movies match your search" : "No movies found"}
+                            {searchQuery
+                              ? "No movies match your search"
+                              : "No movies found"}
                           </p>
                           {!searchQuery && (
-                            <Button variant="outline" onClick={handleCreateMovie}>
+                            <Button
+                              variant="outline"
+                              onClick={handleCreateMovie}
+                            >
                               <Plus className="mr-2 h-4 w-4" />
                               Create your first movie
                             </Button>
@@ -473,7 +599,7 @@ export default function MoviesPage() {
 
       {/* Movie Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="min-w-3xl max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingMovie ? "Edit Movie" : "Create New Movie"}
@@ -489,12 +615,16 @@ export default function MoviesPage() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingMovie} onOpenChange={() => setDeletingMovie(null)}>
+      <AlertDialog
+        open={!!deletingMovie}
+        onOpenChange={() => setDeletingMovie(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Movie</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{deletingMovie?.title}&rdquo;? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{deletingMovie?.title}
+              &rdquo;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

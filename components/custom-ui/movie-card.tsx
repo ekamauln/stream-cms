@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, Calendar, Eye, Play } from "lucide-react";
+import { useLiveViewCount } from "@/hooks/use-live-view-count";
 
 interface Movie {
   id: number;
@@ -29,6 +32,9 @@ interface MovieCardProps {
 }
 
 export function MovieCard({ movie }: MovieCardProps) {
+  // Use the hook to get dynamic view count with live updates
+  const { viewCount, isIncrementing } = useLiveViewCount(movie.slug, movie.viewCount);
+
   const formatDuration = (minutes?: number) => {
     if (!minutes) return "Unknown";
     const hours = Math.floor(minutes / 60);
@@ -72,9 +78,11 @@ export function MovieCard({ movie }: MovieCardProps) {
           )}
 
           {/* View count */}
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
+          <div className={`absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm transition-all duration-300 ${
+            isIncrementing ? 'scale-110 bg-green-500/70' : ''
+          }`}>
             <Eye className="h-3 w-3" />
-            {movie.viewCount.toLocaleString()}
+            {viewCount.toLocaleString()}
           </div>
         </div>
 

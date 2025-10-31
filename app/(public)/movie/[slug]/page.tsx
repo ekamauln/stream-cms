@@ -1,11 +1,13 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
+import { ViewTracker } from "@/components/view-tracker";
+import { LiveViewCount } from "@/components/live-view-count";
 
 interface MoviePageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 async function getMovie(slug: string) {
@@ -20,8 +22,7 @@ async function getMovie(slug: string) {
       },
     });
     return movie;
-  } catch (error) {
-    console.error("Error fetching movie:", error);
+  } catch {
     return null;
   }
 }
@@ -29,7 +30,8 @@ async function getMovie(slug: string) {
 export async function generateMetadata({
   params,
 }: MoviePageProps): Promise<Metadata> {
-  const movie = await getMovie(params.slug);
+  const { slug } = await params;
+  const movie = await getMovie(slug);
 
   if (!movie) {
     return {
@@ -78,7 +80,8 @@ export async function generateMetadata({
 }
 
 export default async function MoviePage({ params }: MoviePageProps) {
-  const movie = await getMovie(params.slug);
+  const { slug } = await params;
+  const movie = await getMovie(slug);
 
   if (!movie) {
     notFound();
@@ -94,6 +97,13 @@ export default async function MoviePage({ params }: MoviePageProps) {
 
   return (
     <div className="container mx-auto py-8">
+      {/* Track view count */}
+      {/* Option 1: Session-based (default) - only counts once per session */}
+      {/* <ViewTracker movieSlug={slug} sessionBased={true} /> */}
+
+      {/* Option 2: Count every visit - no session limitation */}
+      <ViewTracker movieSlug={slug} sessionBased={false} />
+
       <div className="max-w-4xl mx-auto">
         {/* Movie Header */}
         <div className="mb-8">
@@ -102,6 +112,7 @@ export default async function MoviePage({ params }: MoviePageProps) {
             {movie.releaseYear && <span>{movie.releaseYear}</span>}
             {movie.duration && <span>{movie.duration} min</span>}
             {movie.language && <span>{movie.language}</span>}
+            <LiveViewCount movieSlug={slug} initialCount={movie.viewCount} />
           </div>
           {movie.categories.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">

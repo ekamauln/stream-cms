@@ -87,10 +87,10 @@ export default function Home() {
           }));
           setMovies(transformedMovies);
         } else {
-          console.error("Failed to fetch movies");
+          // Handle fetch error silently
         }
-      } catch (error) {
-        console.error("Error fetching movies:", error);
+      } catch {
+        // Handle error silently
       } finally {
         setIsLoadingMovies(false);
       }
@@ -109,10 +109,10 @@ export default function Home() {
           const data = await response.json();
           setCategories(data);
         } else {
-          console.error("Failed to fetch categories");
+          // Handle fetch error silently
         }
-      } catch (error) {
-        console.error("Error fetching categories:", error);
+      } catch {
+        // Handle error silently
       } finally {
         setIsLoadingCategories(false);
       }

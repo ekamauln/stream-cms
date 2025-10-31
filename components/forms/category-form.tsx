@@ -28,19 +28,26 @@ type CategoryFormData = z.infer<typeof categorySchema>;
 
 interface CategoryFormProps {
   categorySlug?: string;
-  initialData?: Partial<CategoryFormData & {
-    _count?: { movies: number };
-  }>;
+  initialData?: Partial<
+    CategoryFormData & {
+      _count?: { movies: number };
+    }
+  >;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }: CategoryFormProps) {
+export function CategoryForm({
+  categorySlug,
+  initialData,
+  onSuccess,
+  onCancel,
+}: CategoryFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  
+
   const isEdit = !!categorySlug;
-  
+
   const form = useForm<CategoryFormData>({
     defaultValues: {
       name: initialData?.name || "",
@@ -65,22 +72,25 @@ export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }:
   const onSubmit = async (data: CategoryFormData) => {
     try {
       setIsLoading(true);
-      
+
       // Manual validation
       const validationResult = categorySchema.safeParse(data);
       if (!validationResult.success) {
         console.error("Validation errors:", validationResult.error.issues);
         return;
       }
-      
-      const url = isEdit ? `/api/categories/${categorySlug}` : "/api/categories";
+
+      const url = isEdit
+        ? `/api/categories/${categorySlug}`
+        : "/api/categories";
       const method = isEdit ? "PUT" : "POST";
-      
+
       // For editing, include newSlug if slug has changed
-      const requestData = isEdit && data.slug !== initialData?.slug 
-        ? { ...validationResult.data, newSlug: data.slug }
-        : validationResult.data;
-      
+      const requestData =
+        isEdit && data.slug !== initialData?.slug
+          ? { ...validationResult.data, newSlug: data.slug }
+          : validationResult.data;
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -91,18 +101,24 @@ export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }:
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${isEdit ? "update" : "create"} category`);
+        throw new Error(
+          errorData.error ||
+            `Failed to ${isEdit ? "update" : "create"} category`
+        );
       }
 
       form.reset();
-      
+
       if (onSuccess) {
         onSuccess();
       } else {
         router.push("/admin/categories");
       }
     } catch (error) {
-      console.error(`Error ${isEdit ? "updating" : "creating"} category:`, error);
+      console.error(
+        `Error ${isEdit ? "updating" : "creating"} category:`,
+        error
+      );
       // In production, you'd show a toast notification here
     } finally {
       setIsLoading(false);
@@ -110,19 +126,21 @@ export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }:
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2 text-xl">
           {isEdit ? "Edit Category" : "Create New Category"}
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
-          {isEdit ? "Update category information" : "Add a new category to organize your movies"}
+          {isEdit
+            ? "Update category information"
+            : "Add a new category to organize your movies"}
         </p>
       </CardHeader>
-      
-      <CardContent className="p-6">
+
+      <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {/* Name Field */}
             <FormField
               control={form.control}
@@ -161,7 +179,8 @@ export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }:
                     />
                   </FormControl>
                   <p className="text-xs text-muted-foreground">
-                    Used in URLs. Auto-generated from name, but you can customize it.
+                    Used in URLs. Auto-generated from name, but you can
+                    customize it.
                   </p>
                   <FormMessage />
                 </FormItem>
@@ -196,34 +215,19 @@ export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }:
             {isEdit && initialData?._count?.movies !== undefined && (
               <div className="rounded-lg border bg-muted/50 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Movies in this category:</span>
+                  <span className="text-sm font-medium">
+                    Movies in this category:
+                  </span>
                   <span className="text-sm text-muted-foreground">
-                    {initialData._count.movies} movie{initialData._count.movies !== 1 ? 's' : ''}
+                    {initialData._count.movies} movie
+                    {initialData._count.movies !== 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex-1"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isEdit ? "Updating..." : "Creating..."}
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    {isEdit ? "Update Category" : "Create Category"}
-                  </>
-                )}
-              </Button>
-              
+            <div className="flex justify-end gap-2 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
@@ -238,6 +242,20 @@ export function CategoryForm({ categorySlug, initialData, onSuccess, onCancel }:
               >
                 <X className="mr-2 h-4 w-4" />
                 Cancel
+              </Button>
+
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEdit ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isEdit ? "Update Category" : "Create Category"}
+                  </>
+                )}
               </Button>
             </div>
           </form>

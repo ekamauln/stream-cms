@@ -51,8 +51,7 @@ async function getAllCategories(): Promise<Category[]> {
     }));
 
     return categories;
-  } catch (error) {
-    console.error("Error fetching categories:", error);
+  } catch {
     return [];
   }
 }

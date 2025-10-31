@@ -84,8 +84,7 @@ async function getCategoryWithMovies(slug: string) {
       },
       movies: transformedMovies,
     };
-  } catch (error) {
-    console.error("Error fetching category with movies:", error);
+  } catch {
     return null;
   }
 }
