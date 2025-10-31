@@ -107,6 +107,11 @@ export default function Page() {
                   Manage Movies
                 </Button>
               </Link>
+              <Link href="/admin/comments">
+                <Button variant="outline" className="w-full justify-start">
+                  Manage Comments
+                </Button>
+              </Link>
               <Link href="/">
                 <Button variant="outline" className="w-full justify-start">
                   View Public Site

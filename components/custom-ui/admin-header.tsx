@@ -66,6 +66,12 @@ export function AdminHeader({
             href: index === adminSegments.length - 1 ? undefined : href,
           });
           break;
+        case "comments":
+          crumbs.push({
+            label: "Comments",
+            href: index === adminSegments.length - 1 ? undefined : href,
+          });
+          break;
         case "new":
           crumbs.push({ label: "New" });
           break;

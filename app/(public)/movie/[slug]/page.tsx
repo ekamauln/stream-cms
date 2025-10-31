@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import db from "@/lib/db";
 import { ViewTracker } from "@/components/custom-ui/view-tracker";
 import { LiveViewCount } from "@/components/custom-ui/live-view-count";
+import { CommentsSection } from "@/components/custom-ui/comments-section";
 
 interface MoviePageProps {
   params: Promise<{
@@ -169,6 +170,9 @@ export default async function MoviePage({ params }: MoviePageProps) {
           {getDisplayDescription(movie.metaDescription, movie.synopsis)}
         </p>
       </div>
+
+      {/* Comments Section */}
+      <CommentsSection movieId={movie.id} />
     </div>
   );
 }
