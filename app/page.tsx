@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MovieCard } from "@/components/custom-ui/movie-card";
 import { CategoryFilter } from "@/components/custom-ui/category-filter";
 import { SearchBar } from "@/components/custom-ui/search-bar";
@@ -8,118 +8,125 @@ import { Header } from "@/components/custom-ui/header";
 import { Footer } from "@/components/custom-ui/footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Film, Sparkles, TrendingUp } from "lucide-react";
+import { Film, Sparkles, TrendingUp, Loader2 } from "lucide-react";
 
-// Mock data - In production, this would come from your API
-const mockMovies = [
-  {
-    id: 1,
-    title: "The Quantum Paradox",
-    slug: "quantum-paradox",
-    synopsis:
-      "A brilliant scientist discovers a way to manipulate time, but each change creates devastating consequences across parallel universes.",
-    releaseYear: 2024,
-    duration: 142,
-    language: "English",
-    posterUrl: null,
-    isPublished: true,
-    featured: true,
-    viewCount: 15420,
-    createdAt: new Date("2024-01-15T10:00:00Z"),
-    categories: [
-      { id: 1, name: "Sci-Fi", slug: "sci-fi" },
-      { id: 2, name: "Thriller", slug: "thriller" },
-    ],
-  },
-  {
-    id: 2,
-    title: "Ocean's Legacy",
-    slug: "oceans-legacy",
-    synopsis:
-      "Deep beneath the Pacific Ocean, marine biologists discover an ancient civilization that holds the key to Earth's future.",
-    releaseYear: 2024,
-    duration: 118,
-    language: "English",
-    posterUrl: null,
-    isPublished: true,
-    featured: false,
-    viewCount: 8930,
-    createdAt: new Date("2024-02-20T14:30:00Z"),
-    categories: [
-      { id: 3, name: "Adventure", slug: "adventure" },
-      { id: 4, name: "Drama", slug: "drama" },
-    ],
-  },
-  {
-    id: 3,
-    title: "Digital Echoes",
-    slug: "digital-echoes",
-    synopsis:
-      "In a world where consciousness can be uploaded to the cloud, a hacker fights to preserve human authenticity.",
-    releaseYear: 2023,
-    duration: 105,
-    language: "English",
-    posterUrl: null,
-    isPublished: true,
-    featured: true,
-    viewCount: 23156,
-    createdAt: new Date("2023-11-05T09:15:00Z"),
-    categories: [
-      { id: 1, name: "Sci-Fi", slug: "sci-fi" },
-      { id: 5, name: "Action", slug: "action" },
-    ],
-  },
-  {
-    id: 4,
-    title: "The Last Garden",
-    slug: "last-garden",
-    synopsis:
-      "After climate change devastates Earth, a small community fights to preserve the last remaining natural ecosystem.",
-    releaseYear: 2024,
-    duration: 134,
-    language: "English",
-    posterUrl: null,
-    isPublished: true,
-    featured: false,
-    viewCount: 12045,
-    createdAt: new Date("2024-03-12T16:45:00Z"),
-    categories: [
-      { id: 4, name: "Drama", slug: "drama" },
-      { id: 6, name: "Environmental", slug: "environmental" },
-    ],
-  },
-];
+// Type definitions for API response
+interface ApiMovie {
+  id: number;
+  title: string;
+  slug: string;
+  synopsis?: string | null;
+  releaseYear?: number | null;
+  duration?: number | null;
+  language?: string | null;
+  posterUrl?: string | null;
+  isPublished: boolean;
+  featured: boolean;
+  createdAt: string;
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+}
 
-const mockCategories = [
-  { id: 1, name: "Sci-Fi", slug: "sci-fi", description: "Science Fiction" },
-  { id: 2, name: "Thriller", slug: "thriller", description: "Thriller Movies" },
-  {
-    id: 3,
-    name: "Adventure",
-    slug: "adventure",
-    description: "Adventure Films",
-  },
-  { id: 4, name: "Drama", slug: "drama", description: "Drama Movies" },
-  { id: 5, name: "Action", slug: "action", description: "Action Movies" },
-  {
-    id: 6,
-    name: "Environmental",
-    slug: "environmental",
-    description: "Environmental Films",
-  },
-];
+// Type for MovieCard component
+interface Movie {
+  id: number;
+  title: string;
+  slug: string;
+  synopsis?: string;
+  releaseYear?: number;
+  duration?: number;
+  language?: string;
+  posterUrl?: string | null;
+  isPublished: boolean;
+  featured: boolean;
+  viewCount: number;
+  createdAt: Date;
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+}
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingMovies, setIsLoadingMovies] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  // Fetch movies from API
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        setIsLoadingMovies(true);
+        const response = await fetch("/api/movies?published=true");
+        if (response.ok) {
+          const data = await response.json();
+          // Transform API data to match component expectations
+          const transformedMovies: Movie[] = data.map((movie: ApiMovie) => ({
+            ...movie,
+            synopsis: movie.synopsis || undefined,
+            releaseYear: movie.releaseYear || undefined,
+            duration: movie.duration || undefined,
+            language: movie.language || undefined,
+            viewCount: 0, // Default viewCount since API doesn't return this
+            createdAt: new Date(movie.createdAt),
+          }));
+          setMovies(transformedMovies);
+        } else {
+          console.error("Failed to fetch movies");
+        }
+      } catch (error) {
+        console.error("Error fetching movies:", error);
+      } finally {
+        setIsLoadingMovies(false);
+      }
+    };
+
+    fetchMovies();
+  }, []);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await fetch("/api/categories");
+        if (response.ok) {
+          const data = await response.json();
+          setCategories(data);
+        } else {
+          console.error("Failed to fetch categories");
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Filter movies based on search and category
   const filteredMovies = useMemo(() => {
-    let filtered = mockMovies;
+    let filtered = movies;
 
     // Filter by category
     if (selectedCategory) {
-      filtered = filtered.filter((movie) =>
+      filtered = filtered.filter((movie: Movie) =>
         movie.categories.some((cat) => cat.slug === selectedCategory)
       );
     }
@@ -127,20 +134,16 @@ export default function Home() {
     // Filter by search query
     if (searchQuery) {
       filtered = filtered.filter(
-        (movie) =>
+        (movie: Movie) =>
           movie.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           movie.synopsis?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     return filtered;
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, searchQuery, movies]);
 
-  const featuredMovies = mockMovies.filter((movie) => movie.featured);
-  const totalViews = mockMovies.reduce(
-    (sum, movie) => sum + movie.viewCount,
-    0
-  );
+  const featuredMovies = movies.filter((movie: Movie) => movie.featured);
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,28 +165,40 @@ export default function Home() {
             <div className="flex items-center justify-center gap-8 mb-8">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
-                  {mockMovies.length}
+                  {isLoadingMovies ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  ) : (
+                    movies.length
+                  )}
                 </div>
                 <div className="text-sm text-muted-foreground">Movies</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
-                  {mockCategories.length}
+                  {isLoadingCategories ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  ) : (
+                    categories.length
+                  )}
                 </div>
                 <div className="text-sm text-muted-foreground">Categories</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
-                  {totalViews.toLocaleString()}
+                  {isLoadingMovies ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  ) : (
+                    "∞"
+                  )}
                 </div>
-                <div className="text-sm text-muted-foreground">Total Views</div>
+                <div className="text-sm text-muted-foreground">Available</div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Featured Movies Section */}
-        {featuredMovies.length > 0 && (
+        {!isLoadingMovies && featuredMovies.length > 0 && (
           <section className="mb-12">
             <div className="mb-6 flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -196,6 +211,20 @@ export default function Home() {
               {featuredMovies.map((movie) => (
                 <MovieCard key={movie.id} movie={movie} />
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Featured Movies Loading */}
+        {isLoadingMovies && (
+          <section className="mb-12">
+            <div className="mb-6 flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-bold">Featured Movies</h2>
+            </div>
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span className="text-muted-foreground">Loading featured movies...</span>
             </div>
           </section>
         )}
@@ -217,17 +246,29 @@ export default function Home() {
           </div>
 
           <div className="mt-4">
-            <CategoryFilter
-              categories={mockCategories}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-            />
+            {isLoadingCategories ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <span className="text-muted-foreground">Loading categories...</span>
+              </div>
+            ) : (
+              <CategoryFilter
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
+            )}
           </div>
         </section>
 
         {/* Movies Grid */}
         <section>
-          {filteredMovies.length > 0 ? (
+          {isLoadingMovies ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-2" />
+              <span className="text-muted-foreground">Loading movies...</span>
+            </div>
+          ) : filteredMovies.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredMovies.map((movie) => (
                 <MovieCard key={movie.id} movie={movie} />

@@ -66,6 +66,10 @@ interface Movie {
   featured: boolean;
   viewCount: number;
   createdAt: string;
+  // SEO Meta Tags
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string;
   categories: Array<{
     id: number;
     name: string;

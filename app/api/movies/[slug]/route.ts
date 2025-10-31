@@ -62,7 +62,10 @@ export async function PUT(
       videoUrl,
       isPublished,
       featured,
-      categoryIds
+      categoryIds,
+      metaTitle,
+      metaDescription,
+      metaKeywords
     } = body;
 
     // First check if movie exists
@@ -104,6 +107,9 @@ export async function PUT(
         videoUrl,
         isPublished,
         featured,
+        metaTitle,
+        metaDescription,
+        metaKeywords,
         categories: {
           set: categoryIds?.map((categoryId: number) => ({
             id: categoryId

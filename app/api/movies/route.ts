@@ -85,6 +85,9 @@ export async function POST(request: NextRequest) {
       isPublished = false,
       featured = false,
       categoryIds = [],
+      metaTitle,
+      metaDescription,
+      metaKeywords,
     } = body;
 
     // Validate required fields
@@ -127,6 +130,9 @@ export async function POST(request: NextRequest) {
         videoUrl,
         isPublished,
         featured,
+        metaTitle,
+        metaDescription,
+        metaKeywords,
         categories: {
           connect: categoryIds.map((categoryId: number) => ({
             id: categoryId,

@@ -17,6 +17,15 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ImageUpload } from "@/components/custom-ui/image-upload";
+import { uploadPosterImage } from "@/lib/upload-utils";
 import { Loader2, Save, X, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -24,23 +33,39 @@ const movieSchema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required"),
   synopsis: z.string().optional(),
-  releaseYear: z.number().min(1900, "Release year must be after 1900").max(new Date().getFullYear() + 5, "Release year cannot be too far in the future").optional(),
+  releaseYear: z
+    .number()
+    .min(1900, "Release year must be after 1900")
+    .max(
+      new Date().getFullYear() + 5,
+      "Release year cannot be too far in the future"
+    )
+    .optional(),
   duration: z.number().min(1, "Duration must be at least 1 minute").optional(),
   language: z.string().optional(),
-  posterUrl: z.union([z.string().url("Invalid poster URL"), z.literal("")]).optional(),
+  posterUrl: z.string().optional(),
   videoUrl: z.string().url("Invalid video URL"),
   isPublished: z.boolean().default(false),
   featured: z.boolean().default(false),
   categoryIds: z.array(z.number()).min(1, "At least one category is required"),
+  // SEO Meta Tags
+  metaTitle: z
+    .string()
+    .max(60, "Meta title should be 60 characters or less")
+    .optional(),
+  metaDescription: z.string().optional(), // Removed character limit for longer descriptions
+  metaKeywords: z.string().optional(),
 });
 
 type MovieFormData = z.infer<typeof movieSchema>;
 
 interface MovieFormProps {
   movieSlug?: string;
-  initialData?: Partial<MovieFormData & {
-    categories: Array<{ id: number; name: string; slug: string }>;
-  }>;
+  initialData?: Partial<
+    MovieFormData & {
+      categories: Array<{ id: number; name: string; slug: string }>;
+    }
+  >;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -51,12 +76,18 @@ interface Category {
   slug: string;
 }
 
-export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: MovieFormProps) {
+export function MovieForm({
+  movieSlug,
+  initialData,
+  onSuccess,
+  onCancel,
+}: MovieFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [selectedPosterFile, setSelectedPosterFile] = useState<File | null>(null);
   const router = useRouter();
-  
+
   const isEdit = !!movieSlug;
 
   // Fetch categories from API
@@ -64,16 +95,16 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
     const fetchCategories = async () => {
       setCategoriesLoading(true);
       try {
-        const response = await fetch('/api/categories');
-        
+        const response = await fetch("/api/categories");
+
         if (!response.ok) {
-          throw new Error('Failed to fetch categories');
+          throw new Error("Failed to fetch categories");
         }
-        
+
         const data = await response.json();
         setCategories(data);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error("Error fetching categories:", error);
         setCategories([]); // Set empty array on error
       } finally {
         setCategoriesLoading(false);
@@ -82,7 +113,7 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
 
     fetchCategories();
   }, []);
-  
+
   const form = useForm<MovieFormData>({
     defaultValues: {
       title: initialData?.title || "",
@@ -95,7 +126,17 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
       videoUrl: initialData?.videoUrl || "",
       isPublished: initialData?.isPublished ?? false,
       featured: initialData?.featured ?? false,
-      categoryIds: initialData?.categories?.map(cat => cat.id) || [],
+      categoryIds: initialData?.categories?.map((cat) => cat.id) || [],
+      // SEO Meta Tags
+      metaTitle:
+        (initialData as MovieFormData & Record<string, unknown>)?.metaTitle ||
+        "",
+      metaDescription:
+        (initialData as MovieFormData & Record<string, unknown>)
+          ?.metaDescription || "",
+      metaKeywords:
+        (initialData as MovieFormData & Record<string, unknown>)
+          ?.metaKeywords || "",
     },
   });
 
@@ -114,38 +155,57 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
   const onSubmit = async (data: MovieFormData) => {
     try {
       setIsLoading(true);
-      
+
       // Check if categories are still loading
       if (categoriesLoading) {
         console.error("Categories are still loading. Please wait.");
         return;
       }
-      
+
       // Manual validation
       const validationResult = movieSchema.safeParse(data);
       if (!validationResult.success) {
         console.error("Validation errors:", validationResult.error.issues);
         return;
       }
-      
+
+      const finalData = { ...validationResult.data };
+
+      // Handle image upload if a file was selected
+      if (selectedPosterFile && finalData.slug) {
+        try {
+          console.log("Uploading poster image...");
+          const uploadedUrl = await uploadPosterImage(selectedPosterFile, finalData.slug);
+          finalData.posterUrl = uploadedUrl;
+          console.log("Poster uploaded successfully:", uploadedUrl);
+        } catch (error) {
+          console.error("Failed to upload poster:", error);
+          alert("Failed to upload poster image. Please try again.");
+          return;
+        }
+      }
+
       const url = isEdit ? `/api/movies/${movieSlug}` : "/api/movies";
       const method = isEdit ? "PUT" : "POST";
-      
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(validationResult.data),
+        body: JSON.stringify(finalData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${isEdit ? "update" : "create"} movie`);
+        throw new Error(
+          errorData.error || `Failed to ${isEdit ? "update" : "create"} movie`
+        );
       }
 
       form.reset();
-      
+      setSelectedPosterFile(null);
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -162,7 +222,7 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
   const toggleCategory = (categoryId: number) => {
     const currentIds = form.getValues("categoryIds");
     const newIds = currentIds.includes(categoryId)
-      ? currentIds.filter(id => id !== categoryId)
+      ? currentIds.filter((id) => id !== categoryId)
       : [...currentIds, categoryId];
     form.setValue("categoryIds", newIds, { shouldValidate: true });
   };
@@ -174,10 +234,12 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
           {isEdit ? "Edit Movie" : "Create New Movie"}
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
-          {isEdit ? "Update movie information and settings" : "Add a new movie to your streaming platform"}
+          {isEdit
+            ? "Update movie information and settings"
+            : "Add a new movie to your streaming platform"}
         </p>
       </CardHeader>
-      
+
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -185,33 +247,33 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter movie title" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter movie title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="movie-slug" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="movie-slug" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
@@ -222,7 +284,7 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
                 <FormItem>
                   <FormLabel>Synopsis</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Enter movie synopsis..."
                       className="min-h-[100px]"
                       {...field}
@@ -237,57 +299,77 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Movie Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="releaseYear"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Release Year</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        placeholder="2025"
-                        value={field.value || ""}
-                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="releaseYear"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Release Year</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="2025"
+                          value={field.value || ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseInt(e.target.value, 10)
+                                : undefined
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration (minutes)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        placeholder="120"
-                        value={field.value || ""}
-                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Duration (minutes)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="120"
+                          value={field.value || ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                ? parseInt(e.target.value, 10)
+                                : undefined
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Language</FormLabel>
-                    <FormControl>
-                      <Input placeholder="English" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Language</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="English">English</SelectItem>
+                          <SelectItem value="Indonesia">Indonesia</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </div>
 
@@ -295,19 +377,70 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Media URLs</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="posterUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value}
+                          onChange={field.onChange}
+                          onFileSelect={setSelectedPosterFile}
+                          slug={form.watch("slug")}
+                          label="Poster Image"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="videoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Video URL *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="url"
+                          placeholder="https://example.com/video.mp4"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* SEO Meta Tags */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">SEO Meta Tags</h3>
+              <p className="text-sm text-muted-foreground">
+                Optimize your movie&apos;s search engine visibility with custom
+                meta tags.
+              </p>
+
               <FormField
                 control={form.control}
-                name="posterUrl"
+                name="metaTitle"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Poster URL</FormLabel>
+                    <FormLabel>Meta Title</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="url"
-                        placeholder="https://example.com/poster.jpg"
+                      <Input
+                        placeholder="SEO optimized title (leave empty to use movie title)"
                         {...field}
                       />
                     </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      {field.value
+                        ? `${field.value.length}/60 characters`
+                        : "Optional: Custom title for search engines"}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -315,22 +448,46 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
 
               <FormField
                 control={form.control}
-                name="videoUrl"
+                name="metaDescription"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Video URL *</FormLabel>
+                    <FormLabel>Meta Description</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="url"
-                        placeholder="https://example.com/video.mp4"
+                      <Textarea
+                        placeholder="SEO description for search engines (leave empty to use synopsis)"
+                        className="min-h-20"
                         {...field}
                       />
                     </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      {field.value
+                        ? `${field.value.length} characters`
+                        : "Optional: Will use synopsis if empty. No character limit."}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              </div>
+
+              <FormField
+                control={form.control}
+                name="metaKeywords"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meta Keywords</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="keyword1, keyword2, keyword3..."
+                        {...field}
+                      />
+                    </FormControl>
+                    <div className="text-xs text-muted-foreground">
+                      Optional: Comma-separated keywords related to the movie
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             {/* Categories */}
@@ -351,11 +508,14 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
                           </div>
                         ) : categories.length === 0 ? (
                           <div className="text-sm text-muted-foreground p-4 border border-dashed rounded-lg">
-                            No categories available. Please create categories first.
+                            No categories available. Please create categories
+                            first.
                           </div>
                         ) : (
                           categories.map((category) => {
-                            const isSelected = field.value.includes(category.id);
+                            const isSelected = field.value.includes(
+                              category.id
+                            );
                             return (
                               <Badge
                                 key={category.id}
@@ -364,7 +524,9 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
                                 onClick={() => toggleCategory(category.id)}
                               >
                                 {isSelected && <X className="h-3 w-3 mr-1" />}
-                                {!isSelected && <Plus className="h-3 w-3 mr-1" />}
+                                {!isSelected && (
+                                  <Plus className="h-3 w-3 mr-1" />
+                                )}
                                 {category.name}
                               </Badge>
                             );
@@ -434,9 +596,15 @@ export function MovieForm({ movieSlug, initialData, onSuccess, onCancel }: Movie
                 </Button>
               )}
               <Button type="submit" disabled={isLoading || categoriesLoading}>
-                {(isLoading || categoriesLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {(isLoading || categoriesLoading) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 <Save className="mr-2 h-4 w-4" />
-                {categoriesLoading ? "Loading..." : isEdit ? "Update Movie" : "Create Movie"}
+                {categoriesLoading
+                  ? "Loading..."
+                  : isEdit
+                  ? "Update Movie"
+                  : "Create Movie"}
               </Button>
             </div>
           </form>

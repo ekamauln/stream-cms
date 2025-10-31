@@ -33,11 +33,13 @@ export function MovieCard({ movie }: MovieCardProps) {
     if (!minutes) return "Unknown";
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${remainingMinutes}m`;
+    return hours > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${remainingMinutes}m`;
   };
 
   return (
-    <Link href={`/movie/${movie.slug}`}>
+    <Link href={`/movies/${movie.slug}`}>
       <Card className="group overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
         <div className="relative aspect-2/3 overflow-hidden">
           {movie.posterUrl ? (
@@ -52,7 +54,7 @@ export function MovieCard({ movie }: MovieCardProps) {
               <Play className="h-16 w-16 text-gray-400" />
             </div>
           )}
-          
+
           {/* Overlay with play button */}
           <div className="absolute inset-0 bg-black/0 transition-all duration-300 group-hover:bg-black/20">
             <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -80,7 +82,7 @@ export function MovieCard({ movie }: MovieCardProps) {
           <h3 className="mb-2 font-semibold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
             {movie.title}
           </h3>
-          
+
           {movie.synopsis && (
             <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
               {movie.synopsis}

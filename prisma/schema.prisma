@@ -91,7 +91,7 @@ model Movie {
   id          Int      @id @default(autoincrement())
   title       String
   slug        String   @unique
-  synopsis    String?
+  synopsis    String?  @db.Text // Use Text for longer content
   releaseYear Int?
   duration    Int? // minutes
   language    String?
@@ -100,6 +100,10 @@ model Movie {
   isPublished Boolean  @default(false) // published -> visible on public site
   featured    Boolean  @default(false)
   viewCount   Int      @default(0)
+  // SEO Meta Tags
+  metaTitle       String? // SEO title (if different from title)
+  metaDescription String? @db.Text // Use Text for longer SEO descriptions
+  metaKeywords    String? // SEO keywords (comma-separated)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

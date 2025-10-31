@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Slideshow } from "@/components/custom-ui/slideshow";
 import { signIn } from "@/lib/auth-client";
+import { getSiteName } from "@/lib/site-utils";
 import * as z from "zod";
 
 const loginSchema = z.object({
@@ -30,6 +31,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [siteName, setSiteName] = useState("Stream CMS");
   const router = useRouter();
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,6 +40,11 @@ export function LoginForm() {
       password: "",
     },
   });
+
+  // Set dynamic site name based on domain
+  useEffect(() => {
+    setSiteName(getSiteName());
+  }, []);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -64,7 +71,7 @@ export function LoginForm() {
             <form className="p-6 md:p-8" onSubmit={form.handleSubmit(onSubmit)}>
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold">Livotech</h1>
+                  <h1 className="text-2xl font-bold">{siteName}</h1>
                   <p className="text-muted-foreground text-balance">
                     Login to use the application
                   </p>
