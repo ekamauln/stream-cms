@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   Form,
@@ -45,8 +46,8 @@ const movieSchema = z.object({
   language: z.string().optional(),
   posterUrl: z.string().optional(),
   videoUrl: z.string().url("Invalid video URL"),
-  isPublished: z.boolean().default(false),
-  featured: z.boolean().default(false),
+  isPublished: z.boolean(),
+  featured: z.boolean(),
   categoryIds: z.array(z.number()).min(1, "At least one category is required"),
   // SEO Meta Tags
   metaTitle: z
@@ -115,6 +116,7 @@ export function MovieForm({
   }, []);
 
   const form = useForm<MovieFormData>({
+    resolver: zodResolver(movieSchema),
     defaultValues: {
       title: initialData?.title || "",
       slug: initialData?.slug || "",
@@ -158,18 +160,11 @@ export function MovieForm({
 
       // Check if categories are still loading
       if (categoriesLoading) {
-        console.error("Categories are still loading. Please wait.");
+        alert("Categories are still loading. Please wait.");
         return;
       }
 
-      // Manual validation
-      const validationResult = movieSchema.safeParse(data);
-      if (!validationResult.success) {
-        console.error("Validation errors:", validationResult.error.issues);
-        return;
-      }
-
-      const finalData = { ...validationResult.data };
+      const finalData = { ...data };
 
       // Handle image upload if a file was selected
       if (selectedPosterFile && finalData.slug) {
@@ -213,7 +208,7 @@ export function MovieForm({
       }
     } catch (error) {
       console.error(`Error ${isEdit ? "updating" : "creating"} movie:`, error);
-      // In production, you'd show a toast notification here
+      alert(`Error: ${error instanceof Error ? error.message : 'An error occurred'}`);
     } finally {
       setIsLoading(false);
     }
