@@ -118,7 +118,15 @@ export default function MoviesPage() {
         }
 
         const data = await response.json();
-        setMovies(data);
+        
+        // Handle both old array format and new paginated format
+        if (Array.isArray(data)) {
+          setMovies(data);
+        } else if (data.movies && Array.isArray(data.movies)) {
+          setMovies(data.movies);
+        } else {
+          setMovies([]);
+        }
       } catch (error) {
         console.error("Error fetching movies:", error);
         setMovies([]);
@@ -308,7 +316,15 @@ export default function MoviesPage() {
 
         if (response.ok) {
           const data = await response.json();
-          setMovies(data);
+          
+          // Handle both old array format and new paginated format
+          if (Array.isArray(data)) {
+            setMovies(data);
+          } else if (data.movies && Array.isArray(data.movies)) {
+            setMovies(data.movies);
+          } else {
+            setMovies([]);
+          }
         }
       } catch (error) {
         console.error("Error refetching movies:", error);

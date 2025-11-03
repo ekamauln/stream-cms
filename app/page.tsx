@@ -105,20 +105,28 @@ export default function Home() {
         if (response.ok) {
           const data: ApiResponse = await response.json();
           
-          // Transform API data to match component expectations
-          const transformedMovies: Movie[] = data.movies.map((movie: ApiMovie) => ({
-            ...movie,
-            synopsis: movie.synopsis || undefined,
-            releaseYear: movie.releaseYear || undefined,
-            duration: movie.duration || undefined,
-            language: movie.language || undefined,
-            viewCount: 0, // Default viewCount since API doesn't return this
-            createdAt: new Date(movie.createdAt),
-          }));
-          
-          setMovies(transformedMovies);
-          setTotalPages(data.pagination.totalPages);
-          setTotalCount(data.pagination.totalCount);
+          // Validate response structure
+          if (data && data.movies && Array.isArray(data.movies)) {
+            // Transform API data to match component expectations
+            const transformedMovies: Movie[] = data.movies.map((movie: ApiMovie) => ({
+              ...movie,
+              synopsis: movie.synopsis || undefined,
+              releaseYear: movie.releaseYear || undefined,
+              duration: movie.duration || undefined,
+              language: movie.language || undefined,
+              viewCount: 0, // Default viewCount since API doesn't return this
+              createdAt: new Date(movie.createdAt),
+            }));
+            
+            setMovies(transformedMovies);
+            setTotalPages(data.pagination.totalPages);
+            setTotalCount(data.pagination.totalCount);
+          } else {
+            // Invalid response structure
+            setMovies([]);
+            setTotalPages(1);
+            setTotalCount(0);
+          }
         } else {
           // Handle fetch error silently
           setMovies([]);
@@ -173,16 +181,22 @@ export default function Home() {
         const response = await fetch("/api/movies?published=true&featured=true");
         if (response.ok) {
           const data: ApiResponse = await response.json();
-          const transformedMovies: Movie[] = data.movies.map((movie: ApiMovie) => ({
-            ...movie,
-            synopsis: movie.synopsis || undefined,
-            releaseYear: movie.releaseYear || undefined,
-            duration: movie.duration || undefined,
-            language: movie.language || undefined,
-            viewCount: 0,
-            createdAt: new Date(movie.createdAt),
-          }));
-          setFeaturedMovies(transformedMovies);
+          
+          // Validate response structure
+          if (data && data.movies && Array.isArray(data.movies)) {
+            const transformedMovies: Movie[] = data.movies.map((movie: ApiMovie) => ({
+              ...movie,
+              synopsis: movie.synopsis || undefined,
+              releaseYear: movie.releaseYear || undefined,
+              duration: movie.duration || undefined,
+              language: movie.language || undefined,
+              viewCount: 0,
+              createdAt: new Date(movie.createdAt),
+            }));
+            setFeaturedMovies(transformedMovies);
+          } else {
+            setFeaturedMovies([]);
+          }
         }
       } catch {
         // Handle error silently

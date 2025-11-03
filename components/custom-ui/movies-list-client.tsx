@@ -103,20 +103,27 @@ export function MoviesListClient() {
         if (response.ok) {
           const data: ApiResponse = await response.json();
           
-          // Transform API data to match component expectations
-          const transformedMovies: Movie[] = data.movies.map((movie: ApiMovie) => ({
-            ...movie,
-            synopsis: movie.synopsis || undefined,
-            releaseYear: movie.releaseYear || undefined,
-            duration: movie.duration || undefined,
-            language: movie.language || undefined,
-            viewCount: 0, // Default viewCount since API doesn't return this
-            createdAt: new Date(movie.createdAt),
-          }));
-          
-          setMovies(transformedMovies);
-          setTotalPages(data.pagination.totalPages);
-          setTotalCount(data.pagination.totalCount);
+          // Validate response structure
+          if (data && data.movies && Array.isArray(data.movies)) {
+            // Transform API data to match component expectations
+            const transformedMovies: Movie[] = data.movies.map((movie: ApiMovie) => ({
+              ...movie,
+              synopsis: movie.synopsis || undefined,
+              releaseYear: movie.releaseYear || undefined,
+              duration: movie.duration || undefined,
+              language: movie.language || undefined,
+              viewCount: 0, // Default viewCount since API doesn't return this
+              createdAt: new Date(movie.createdAt),
+            }));
+            
+            setMovies(transformedMovies);
+            setTotalPages(data.pagination.totalPages);
+            setTotalCount(data.pagination.totalCount);
+          } else {
+            setMovies([]);
+            setTotalPages(1);
+            setTotalCount(0);
+          }
         } else {
           setMovies([]);
           setTotalPages(1);
